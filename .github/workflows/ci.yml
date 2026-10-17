@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-trace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Browser for the acceptance tests. Cached, so only the first run downloads it.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pom.xml') }}
+
+      - name: Install Playwright browser and system libraries
+        run: ./mvnw -B -q org.codehaus.mojo:exec-maven-plugin:3.5.0:java -Dexec.mainClass=com.microsoft.playwright.CLI -Dexec.classpathScope=test -Dexec.args="install --with-deps chromium"
+
+      # All levels in one run: unit, integration, system, acceptance. Together they are the regression suite.
+      - name: Build and run all tests
+        run: ./mvnw -B test
+
+      - name: Test the traceability check itself
+        if: always()
+        run: python tools/test_traceability.py
+
+      # Fails (exit 1) if a requirement has no test, a high risk has no tested control or a test fails.
+      - name: Traceability check
+        if: always()
+        run: python tools/traceability.py
+
+      - name: Committed traceability.md is up to date
+        run: git diff --exit-code docs/traceability.md
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            target/surefire-reports/
+            target/playwright-traces/
+            docs/traceability.md
+          if-no-files-found: warn
