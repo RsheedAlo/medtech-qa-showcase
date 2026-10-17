@@ -1,0 +1,29 @@
+﻿# Build output
+target/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs / local config
+*.log
+.env
+
+# Playwright local artifacts
+playwright-report/
+test-results/
+
+# Python (traceability script)
+__pycache__/
+*.pyc
+
+# Personal interview notes must never end up in the repo
+gespraech-notizen*.md
