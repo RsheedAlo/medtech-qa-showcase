@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fallverwaltung (fiktiv)</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 960px; margin: 1.5rem auto; padding: 0 1rem; color: #222; }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.1rem; margin-top: 1.5rem; }
+  fieldset { margin: 1rem 0; border: 1px solid #bbb; }
+  label { margin-right: 1rem; }
+  input, select, button { font: inherit; padding: .25rem .5rem; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid #ccc; padding: .3rem .5rem; text-align: left; }
+  tr.selected { background: #eef4ff; }
+  #message { padding: .5rem .75rem; margin: 1rem 0; border-left: 4px solid #888; background: #f5f5f5; min-height: 1.2em; }
+  #message.error { border-color: #b00020; background: #fdecee; }
+  #message.ok { border-color: #1b7f3b; background: #e9f7ee; }
+  .note { color: #666; font-size: .9rem; }
+</style>
+</head>
+<body>
+<h1>Fallverwaltung OP-Planung</h1>
+<p class="note">Fiktives Projekt, kein Medizinprodukt. Es gibt keinen Login; der Benutzername wird bei jeder Aktion mitgesendet.</p>
+
+<label>Benutzer: <input id="user" value="planer1" autocomplete="off"></label>
+
+<div id="message" role="status"></div>
+
+<fieldset>
+  <legend>Fall anlegen</legend>
+  <label>Patient-ID: <input id="patientId" placeholder="P-004711" autocomplete="off"></label>
+  <label>Eingriffstyp:
+    <select id="interventionType">
+      <option>KNEE</option><option>HIP</option><option>CRANIAL</option>
+    </select>
+  </label>
+  <button id="createBtn">Anlegen</button>
+</fieldset>
+
+<h2>Fälle</h2>
+<table id="cases">
+  <thead><tr><th>Fall-ID</th><th>Patient-ID</th><th>Eingriff</th><th>Status</th><th>Ersteller</th><th>Freigegeben von</th><th>Dateien</th></tr></thead>
+  <tbody></tbody>
+</table>
+
+<section id="detail" hidden>
+  <h2>Ausgewählter Fall: <span id="detailId"></span></h2>
+  <fieldset>
+    <legend>Aktionen</legend>
+    <input type="file" id="fileInput">
+    <button id="uploadBtn">Datei hochladen</button>
+    <button id="submitBtn">Zur Prüfung einreichen</button>
+    <br><br>
+    <label>Patient-ID bestätigen: <input id="confirmId" placeholder="P-004711" autocomplete="off"></label>
+    <button id="approveBtn">Freigeben</button>
+  </fieldset>
+
+  <h2>Audit-Trail</h2>
+  <table id="audit">
+    <thead><tr><th>Zeitstempel</th><th>Benutzer</th><th>Aktion</th><th>Details</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let selected = null;
+
+  function show(text, kind) {
+    const m = $('message');
+    m.textContent = text;
+    m.className = kind || '';
+  }
+
+  // Sends a request; shows the server's error message on failure. Returns the parsed body or null.
+  async function call(path, options = {}) {
+    const headers = Object.assign({ 'X-User': $('user').value }, options.headers || {});
+    const res = await fetch(path, Object.assign({}, options, { headers }));
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      show('Fehler ' + res.status + ': ' + ((data && data.error) || 'Unbekannter Fehler'), 'error');
+      return null;
+    }
+    return data;
+  }
+
+  function cell(tr, text) {
+    const td = document.createElement('td');
+    td.textContent = text == null ? '' : text;
+    tr.appendChild(td);
+  }
+
+  async function loadCases() {
+    const cases = await call('/api/cases');
+    if (!cases) return;
+    const body = $('cases').tBodies[0];
+    body.replaceChildren();
+    for (const c of cases) {
+      const tr = document.createElement('tr');
+      tr.dataset.id = c.id;
+      if (c.id === selected) tr.className = 'selected';
+      [c.id, c.patientId, c.interventionType, c.status, c.createdBy, c.approvedBy,
+        c.files.map(f => f.name).join(', ')].forEach(v => cell(tr, v));
+      tr.addEventListener('click', () => select(c.id));
+      body.appendChild(tr);
+    }
+  }
+
+  async function loadAudit() {
+    if (!selected) return;
+    const entries = await call('/api/cases/' + selected + '/audit');
+    if (!entries) return;
+    const body = $('audit').tBodies[0];
+    body.replaceChildren();
+    for (const e of entries) {
+      const tr = document.createElement('tr');
+      [e.timestamp, e.user, e.action, e.details].forEach(v => cell(tr, v));
+      body.appendChild(tr);
+    }
+  }
+
+  async function select(id) {
+    selected = id;
+    $('detail').hidden = false;
+    $('detailId').textContent = id;
+    await loadCases();
+    await loadAudit();
+  }
+
+  async function refresh() {
+    await loadCases();
+    await loadAudit();
+  }
+
+  $('createBtn').addEventListener('click', async () => {
+    const created = await call('/api/cases', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patientId: $('patientId').value, interventionType: $('interventionType').value })
+    });
+    if (created) {
+      show('Fall angelegt: ' + created.id, 'ok');
+      await select(created.id);
+    }
+  });
+
+  $('uploadBtn').addEventListener('click', async () => {
+    const file = $('fileInput').files[0];
+    if (!file) { show('Bitte zuerst eine Datei auswählen.', 'error'); return; }
+    const form = new FormData();
+    form.append('file', file);
+    const result = await call('/api/cases/' + selected + '/files', { method: 'POST', body: form });
+    if (result) { show('Datei angenommen: ' + file.name, 'ok'); await refresh(); }
+  });
+
+  $('submitBtn').addEventListener('click', async () => {
+    const result = await call('/api/cases/' + selected + '/submit', { method: 'POST' });
+    if (result) { show('Fall eingereicht, Status: ' + result.status, 'ok'); }
+    await refresh();
+  });
+
+  $('approveBtn').addEventListener('click', async () => {
+    const result = await call('/api/cases/' + selected + '/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmPatientId: $('confirmId').value })
+    });
+    if (result) { show('Fall freigegeben, Status: ' + result.status, 'ok'); }
+    await refresh(); // also after a rejection: the audit trail now shows the rejected attempt
+  });
+
+  loadCases();
+</script>
+</body>
+</html>
