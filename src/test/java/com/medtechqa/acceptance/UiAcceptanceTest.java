@@ -5,6 +5,7 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
+import com.microsoft.playwright.Tracing;
 import com.microsoft.playwright.options.FilePayload;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -13,9 +14,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 
+import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
@@ -53,12 +56,16 @@ class UiAcceptanceTest {
     @BeforeEach
     void openPage() {
         context = browser.newContext();
+        context.tracing().start(new Tracing.StartOptions().setScreenshots(true).setSnapshots(true));
         page = context.newPage();
         page.navigate("http://localhost:" + port + "/");
     }
 
+    /** The trace (screenshots, DOM, network) is kept as CI artifact; open it with 'playwright show-trace'. */
     @AfterEach
-    void closePage() {
+    void closePage(TestInfo testInfo) {
+        context.tracing().stop(new Tracing.StopOptions()
+                .setPath(Paths.get("target", "playwright-traces", testInfo.getTestMethod().orElseThrow().getName() + ".zip")));
         context.close();
     }
 
