@@ -90,6 +90,25 @@ class AuditApiTest extends ApiTestSupport {
         assertEquals(List.of("anna"), JsonPath.<List<String>>read(auditJson(first), "$[*].user"));
     }
 
+    // Origin: AI proposal KI-13 (see docs/AI-TESTING.md), adopted after review.
+    @Test
+    @Tag("REQ-008")
+    @DisplayName("REQ-008 a timestamp sent by the client is ignored, the system sets the audit timestamp")
+    void clientTimestampIsIgnored() throws Exception {
+        Instant before = Instant.now();
+
+        String body = mvc.perform(post("/api/cases").header(USER, "mueller")
+                        .contentType("application/json")
+                        .content("{\"patientId\":\"P-004711\",\"interventionType\":\"KNEE\",\"timestamp\":\"2000-01-01T00:00:00Z\"}"))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String id = JsonPath.read(body, "$.id");
+
+        Instant after = Instant.now();
+        Instant logged = Instant.parse(JsonPath.read(auditJson(id), "$[0].timestamp"));
+        assertFalse(logged.isBefore(before), "timestamp must come from the system, not from the request");
+        assertFalse(logged.isAfter(after));
+    }
+
     @Test
     @Tag("REQ-009")
     @DisplayName("REQ-009 changing or deleting audit entries via the API is rejected and the trail stays")

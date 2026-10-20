@@ -97,6 +97,19 @@ class UploadRulesTest {
         assertTrue(c.getFiles().isEmpty());
     }
 
+    // Origin: AI proposal KI-09 (see docs/AI-TESTING.md), adopted after review.
+    @Test
+    @Tag("REQ-003")
+    @DisplayName("REQ-003 the limit applies per file, a case may hold several files of 10 MB")
+    void limitAppliesPerFileNotPerCase() {
+        SurgicalCase c = Fixtures.draft();
+
+        c.addFile("first.stl", MAX, Fixtures.CREATOR);
+        c.addFile("second.stl", MAX, Fixtures.CREATOR);
+
+        assertEquals(2, c.getFiles().size());
+    }
+
     @ParameterizedTest(name = "[{index}] {0} byte is rejected as empty")
     @DisplayName("REQ-003 empty files (0 byte) are rejected")
     @Tag("REQ-003")

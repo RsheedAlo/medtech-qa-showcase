@@ -8,14 +8,14 @@ Automatisch erzeugt von `tools/traceability.py`. Nicht von Hand ändern.
 |---|---|---|---|---|
 | REQ-001 | Fall anlegen | RISK-03 | unit (28), integration (8), system (1), acceptance (1) | BESTANDEN |
 | REQ-002 | Erlaubte Dateitypen beim Upload | RISK-05 | unit (18), integration (10), system (8), acceptance (1) | BESTANDEN |
-| REQ-003 | Maximale Dateigröße | RISK-05 | unit (9), integration (3), system (4) | BESTANDEN |
-| REQ-004 | Fester Status-Workflow | RISK-01, RISK-06 | unit (6), integration (5), system (1) | BESTANDEN |
+| REQ-003 | Maximale Dateigröße | RISK-05 | unit (10), integration (3), system (4) | BESTANDEN |
+| REQ-004 | Fester Status-Workflow | RISK-01, RISK-06 | unit (7), integration (5), system (1) | BESTANDEN |
 | REQ-005 | Freigabe nur mit Planungsdatei | RISK-01 | unit (3), integration (3), system (2), acceptance (1) | BESTANDEN |
-| REQ-006 | Vier-Augen-Prinzip | RISK-02 | unit (9), integration (5), system (2), acceptance (1) | BESTANDEN |
+| REQ-006 | Vier-Augen-Prinzip | RISK-02 | unit (10), integration (5), system (2), acceptance (1) | BESTANDEN |
 | REQ-007 | Freigegebener Fall ist unveränderlich | RISK-06 | unit (2), integration (2), system (1) | BESTANDEN |
-| REQ-008 | Audit-Trail pro Fall | RISK-04 | unit (8), integration (5), system (3) | BESTANDEN |
+| REQ-008 | Audit-Trail pro Fall | RISK-04 | unit (10), integration (6), system (3) | BESTANDEN |
 | REQ-009 | Audit-Einträge sind unveränderlich | RISK-04 | unit (2), integration (2), system (1) | BESTANDEN |
-| REQ-010 | Patient-ID bei Freigabe bestätigen | RISK-03 | unit (8), integration (5), system (3), acceptance (1) | BESTANDEN |
+| REQ-010 | Patient-ID bei Freigabe bestätigen | RISK-03 | unit (9), integration (5), system (3), acceptance (1) | BESTANDEN |
 
 ## Risiken
 

@@ -101,6 +101,23 @@ class ImmutabilityAndAuditTest {
         assertFalse(last.details().isBlank(), "the reason must be logged");
     }
 
+    // Origin: AI proposal KI-10 (see docs/AI-TESTING.md), adopted after review.
+    @Test
+    @Tag("REQ-006")
+    @Tag("REQ-008")
+    @Tag("REQ-010")
+    @DisplayName("REQ-006 REQ-008 REQ-010 two violations at once (creator, wrong confirmation) give exactly one audit entry")
+    void twoViolationsAtOnceAreLoggedOnce() {
+        SurgicalCase c = Fixtures.inReview();
+        int entriesBefore = c.getAuditTrail().size();
+
+        assertThrows(DomainException.NotPermitted.class, () -> c.approve(Fixtures.CREATOR, "P-000000"));
+
+        List<AuditEntry> trail = c.getAuditTrail();
+        assertEquals(entriesBefore + 1, trail.size());
+        assertEquals(AuditAction.APPROVAL_REJECTED, trail.get(trail.size() - 1).action());
+    }
+
     @Test
     @Tag("REQ-008")
     @DisplayName("REQ-008 rejected uploads (wrong type, too large, empty) are not logged")
