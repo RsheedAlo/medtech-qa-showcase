@@ -58,6 +58,18 @@ class UploadRulesTest {
         assertEquals("evil2.pdf", c.getFiles().get(1).name());
     }
 
+    // Origin: AI proposal KI-04 (see docs/AI-TESTING.md), adopted after review.
+    @Test
+    @Tag("REQ-002")
+    @DisplayName("REQ-002 only the last extension counts: plan.exe.stl is accepted")
+    void onlyLastExtensionCounts() {
+        SurgicalCase c = Fixtures.draft();
+
+        c.addFile("plan.exe.stl", 100, Fixtures.CREATOR);
+
+        assertEquals(1, c.getFiles().size());
+    }
+
     // Technique: boundary value analysis around 10 MB = 10_485_760 byte, and around 0.
     @ParameterizedTest(name = "[{index}] {0} byte is accepted")
     @DisplayName("REQ-003 sizes up to and including exactly 10 MB are accepted")

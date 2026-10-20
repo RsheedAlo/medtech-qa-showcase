@@ -7,7 +7,7 @@ Automatisch erzeugt von `tools/traceability.py`. Nicht von Hand ändern.
 | REQ-ID | Kurzbeschreibung | Risiken | Tests (Ebene) | Ergebnis |
 |---|---|---|---|---|
 | REQ-001 | Fall anlegen | RISK-03 | unit (28), integration (8), system (1), acceptance (1) | BESTANDEN |
-| REQ-002 | Erlaubte Dateitypen beim Upload | RISK-05 | unit (17), integration (10), system (8), acceptance (1) | BESTANDEN |
+| REQ-002 | Erlaubte Dateitypen beim Upload | RISK-05 | unit (18), integration (10), system (8), acceptance (1) | BESTANDEN |
 | REQ-003 | Maximale Dateigröße | RISK-05 | unit (9), integration (3), system (4) | BESTANDEN |
 | REQ-004 | Fester Status-Workflow | RISK-01, RISK-06 | unit (6), integration (5), system (1) | BESTANDEN |
 | REQ-005 | Freigabe nur mit Planungsdatei | RISK-01 | unit (3), integration (3), system (2), acceptance (1) | BESTANDEN |
