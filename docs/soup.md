@@ -14,8 +14,18 @@ SOUP ("Software of Unknown Provenance") ist Software, die nicht für dieses Prod
 
 ## Überwachung
 
-Dependabot (`.github/dependabot.yml`) prüft wöchentlich Maven-Abhängigkeiten und GitHub Actions und öffnet Pull Requests bei neuen Versionen und bei Sicherheitsupdates. Ein Pull Request wird erst übernommen, wenn die Pipeline grün ist, also die Regressionstests und der Traceability-Check bestehen.
+Die Überwachung besteht aus zwei getrennten Teilen, die man leicht verwechselt:
+
+- **Versions-Updates** werden in `.github/dependabot.yml` konfiguriert. Dependabot prüft wöchentlich die Maven-Abhängigkeiten und die GitHub Actions und öffnet pro veralteter Abhängigkeit einen Pull Request.
+- **Sicherheitswarnungen** (Dependabot alerts) sind keine Einstellung in dieser Datei, sondern ein Schalter am Repository. GitHub gleicht die Abhängigkeiten gegen seine Advisory-Datenbank ab und meldet bekannte Schwachstellen. Der Schalter ist aktiv.
+
+Beim Aufsetzen war nur der erste Teil aktiv. Dass der zweite fehlte, ist erst bei einer späteren Durchsicht aufgefallen. Die Lehre daraus: Eine SOUP-Überwachung ist erst belegt, wenn man geprüft hat, dass sie wirklich eingeschaltet ist, nicht schon dann, wenn eine Konfigurationsdatei im Repo liegt.
+
+Ein Pull Request wird erst übernommen, wenn die Pipeline grün ist, also die Regressionstests und der Traceability-Check bestehen. Dadurch zeigt jedes Update sofort, ob es etwas bricht.
 
 ## Grenzen
 
-Es gibt keine eigene Bewertung der bekannten Schwachstellen einzelner Bibliotheken und keine Prüfung der Lizenzen. In einem echten Projekt gehört beides zur SOUP-Bewertung.
+Diese Liste ist eine Bestandsaufnahme, keine Bewertung. Es fehlt:
+
+- **Bewertung gemeldeter Schwachstellen.** Dependabot meldet, dass eine Lücke existiert. Niemand hat beurteilt, ob sie in diesem Produkt überhaupt erreichbar ist und was sie für einen Patienten bedeuten würde. Eine Lücke in der Upload-Verarbeitung wäre hier relevant, dieselbe Lücke in einem nie genutzten Teil nicht. Diese Unterscheidung samt Entscheidung (beheben, später beheben, begründet akzeptieren) gehört in einem echten Projekt dokumentiert.
+- **Lizenzprüfung.** Die Lizenzen der Abhängigkeiten wurden nicht geprüft und nicht festgehalten. Für ein kommerzielles Produkt ist das Pflicht, weil manche Lizenzen die Offenlegung des eigenen Quellcodes verlangen.
