@@ -40,6 +40,7 @@ public class SurgicalCase {
     public static SurgicalCase create(String id, String patientId, String interventionType, String user, Clock clock) {
         String actor = requireUser(user);
         if (patientId == null || !PATIENT_ID.matcher(patientId).matches()) {
+            // -> 400 Bad Request
             throw new DomainException.InvalidInput(
                     "Patient-ID muss das Format 'P-' gefolgt von genau 6 Ziffern haben, z. B. P-004711.");
         }
@@ -53,18 +54,22 @@ public class SurgicalCase {
     public synchronized void addFile(String fileName, long sizeBytes, String user) {
         String actor = requireUser(user);
         if (status == CaseStatus.APPROVED) {
+            // -> 409 Conflict
             throw new DomainException.StateConflict("Der Fall ist freigegeben und kann nicht mehr verändert werden.");
         }
         String name = baseName(fileName);
         String extension = extensionOf(name);
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
+            // -> 415 Unsupported Media Type
             throw new DomainException.UnsupportedFileType(
                     "Dateityp nicht erlaubt. Erlaubt sind nur .stl, .pdf und .png.");
         }
         if (sizeBytes <= 0) {
+            // -> 400 Bad Request
             throw new DomainException.InvalidInput("Leere Dateien werden nicht angenommen.");
         }
         if (sizeBytes > MAX_FILE_SIZE_BYTES) {
+            // -> 413 Payload Too Large
             throw new DomainException.FileTooLarge(
                     "Datei zu groß. Das Limit liegt bei 10 MB (" + MAX_FILE_SIZE_BYTES + " Byte).");
         }
@@ -76,6 +81,7 @@ public class SurgicalCase {
     public synchronized void submitForReview(String user) {
         String actor = requireUser(user);
         if (status != CaseStatus.DRAFT) {
+            // -> 409 Conflict
             throw new DomainException.StateConflict(
                     "Nur ein Fall im Status DRAFT kann eingereicht werden (aktuell: " + status + ").");
         }
@@ -91,18 +97,22 @@ public class SurgicalCase {
     public synchronized void approve(String user, String confirmedPatientId) {
         String actor = requireUser(user);
         if (status != CaseStatus.IN_REVIEW) {
+            // -> 409 Conflict
             throw reject(actor, new DomainException.StateConflict(
                     "Freigabe nur im Status IN_REVIEW möglich (aktuell: " + status + ")."));
         }
         if (sameUser(actor, createdBy)) {
+            // -> 403 Forbidden
             throw reject(actor, new DomainException.NotPermitted(
                     "Vier-Augen-Prinzip: Der Ersteller darf den Fall nicht selbst freigeben."));
         }
         if (files.isEmpty()) {
+            // -> 409 Conflict
             throw reject(actor, new DomainException.StateConflict(
                     "Freigabe nicht möglich: Der Fall hat keine Planungsdatei."));
         }
         if (!patientId.equals(confirmedPatientId)) {
+            // -> 409 Conflict
             throw reject(actor, new DomainException.StateConflict(
                     "Freigabe nicht möglich: Die bestätigte Patient-ID fehlt oder stimmt nicht mit dem Fall überein."));
         }
@@ -156,6 +166,7 @@ public class SurgicalCase {
 
     private static String requireUser(String user) {
         if (user == null || user.isBlank()) {
+            // -> 400 Bad Request
             throw new DomainException.InvalidInput("Benutzer fehlt. Es muss angegeben sein, wer handelt.");
         }
         return user.trim();
@@ -173,12 +184,14 @@ public class SurgicalCase {
                 }
             }
         }
+        // -> 400 Bad Request
         throw new DomainException.InvalidInput("Eingriffstyp ungültig. Erlaubt sind KNEE, HIP und CRANIAL.");
     }
 
     /** Drops any path part, so a name like "..\\..\\x.stl" is stored as "x.stl". */
     private static String baseName(String fileName) {
         if (fileName == null || fileName.isBlank()) {
+            // -> 400 Bad Request
             throw new DomainException.InvalidInput("Dateiname fehlt.");
         }
         String name = fileName.replace('\\', '/');
